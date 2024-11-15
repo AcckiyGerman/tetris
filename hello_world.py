@@ -70,6 +70,9 @@ class TetrisGame:
         self.root.bind('<Down>', lambda e: self.move_down())
         self.root.bind('<Up>', lambda e: self.rotate())
         
+        # Start the game loop
+        self.update_game()
+        
         # Center the window
         self.root.update_idletasks()
         width = self.root.winfo_width()
@@ -137,17 +140,82 @@ class TetrisGame:
             tags=tag
         )
 
+    def check_collision(self, offset_x=0, offset_y=0, shape=None):
+        if shape is None:
+            shape = self.current_shape
+            
+        for y, row in enumerate(shape):
+            for x, cell in enumerate(row):
+                if cell:
+                    new_x = self.current_x + x + offset_x
+                    new_y = self.current_y + y + offset_y
+                    
+                    # Check board boundaries
+                    if (new_x < 0 or new_x >= self.BOARD_WIDTH or
+                        new_y >= self.BOARD_HEIGHT):
+                        return True
+                    
+                    # Check collision with placed pieces
+                    if new_y >= 0 and self.board[new_y][new_x]:
+                        return True
+        return False
+
     def move_left(self):
-        print("Move left")
-        # TODO: Implement piece movement
+        if not self.check_collision(offset_x=-1):
+            self.current_x -= 1
+            self.draw_piece()
 
     def move_right(self):
-        print("Move right")
-        # TODO: Implement piece movement
+        if not self.check_collision(offset_x=1):
+            self.current_x += 1
+            self.draw_piece()
 
     def move_down(self):
-        print("Move down")
-        # TODO: Implement piece movement
+        if not self.check_collision(offset_y=1):
+            self.current_y += 1
+            self.draw_piece()
+            return True
+        else:
+            self.place_piece()
+            return False
+
+    def place_piece(self):
+        # Add the current piece to the board
+        for y, row in enumerate(self.current_shape):
+            for x, cell in enumerate(row):
+                if cell:
+                    board_y = self.current_y + y
+                    board_x = self.current_x + x
+                    if board_y >= 0:
+                        self.board[board_y][board_x] = self.current_color
+        
+        # Redraw the entire board
+        self.redraw_board()
+        
+        # Create a new piece
+        self.create_new_piece()
+        
+        # Check if game is over
+        if self.check_collision():
+            print("Game Over!")
+            self.root.quit()
+
+    def redraw_board(self):
+        # Clear the board on canvas
+        self.canvas.delete("placed")
+        
+        # Draw all placed pieces
+        for y, row in enumerate(self.board):
+            for x, color in enumerate(row):
+                if color:
+                    self.draw_block(x, y, color, "placed")
+
+    def update_game(self):
+        # Move piece down automatically
+        self.move_down()
+        
+        # Schedule next update (faster fall speed = lower number)
+        self.root.after(1000, self.update_game)
 
     def rotate(self):
         print("Rotate")

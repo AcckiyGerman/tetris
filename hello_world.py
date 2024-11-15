@@ -50,23 +50,20 @@ class TetrisGame:
         
         # Create main frame
         main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Create score label
         self.score_label = ttk.Label(main_frame, text="Score: 0\nLines: 0")
         self.score_label.grid(row=0, column=1, padx=10, pady=5, sticky="n")
-        
+
         # Create next piece preview
         self.preview_canvas = tk.Canvas(
             main_frame,
-            width=5 * self.BLOCK_SIZE,
-            height=5 * self.BLOCK_SIZE,
+            width=3 * self.BLOCK_SIZE,
+            height=3 * self.BLOCK_SIZE,
             bg='black'
         )
-        self.preview_canvas.grid(row=1, column=1, padx=10, pady=5)
-        
-        # Add "NEXT" label
-        ttk.Label(main_frame, text="NEXT").grid(row=2, column=1, padx=10)
+        self.preview_canvas.grid(row=0, column=1, padx=10, pady=5)
         
         # Create canvas
         canvas_width = self.BOARD_WIDTH * self.BLOCK_SIZE
@@ -188,8 +185,8 @@ class TetrisGame:
         shape_width = len(self.next_shape[0]) * block_size
         shape_height = len(self.next_shape) * block_size
         
-        offset_x = (5 * self.BLOCK_SIZE - shape_width) / 2
-        offset_y = (5 * self.BLOCK_SIZE - shape_height) / 2
+        offset_x = (3 * self.BLOCK_SIZE - shape_width) / 2
+        offset_y = (3 * self.BLOCK_SIZE - shape_height) / 2
         
         # Draw the preview piece
         for y, row in enumerate(self.next_shape):

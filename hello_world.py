@@ -12,6 +12,8 @@ class TetrisGame:
         
         # Game state
         self.game_over = False
+        self.next_shape = None
+        self.next_color = None
         
         # Game constants
         self.BOARD_WIDTH = 10
@@ -53,6 +55,18 @@ class TetrisGame:
         # Create score label
         self.score_label = ttk.Label(main_frame, text="Score: 0\nLines: 0")
         self.score_label.grid(row=0, column=1, padx=10, pady=5, sticky="n")
+        
+        # Create next piece preview
+        self.preview_canvas = tk.Canvas(
+            main_frame,
+            width=5 * self.BLOCK_SIZE,
+            height=5 * self.BLOCK_SIZE,
+            bg='black'
+        )
+        self.preview_canvas.grid(row=1, column=1, padx=10, pady=5)
+        
+        # Add "NEXT" label
+        ttk.Label(main_frame, text="NEXT").grid(row=2, column=1, padx=10)
         
         # Create canvas
         canvas_width = self.BOARD_WIDTH * self.BLOCK_SIZE
@@ -110,17 +124,28 @@ class TetrisGame:
             )
 
     def create_new_piece(self):
-        # Choose a random shape and color
+        if self.next_shape is None:
+            # First piece of the game
+            shape_name = random.choice(list(self.SHAPES.keys()))
+            self.current_shape = self.SHAPES[shape_name]
+            self.current_color = self.colors[list(self.SHAPES.keys()).index(shape_name)]
+        else:
+            # Use the preview piece
+            self.current_shape = self.next_shape
+            self.current_color = self.next_color
+            
+        # Generate next piece
         shape_name = random.choice(list(self.SHAPES.keys()))
-        self.current_shape = self.SHAPES[shape_name]
-        self.current_color = self.colors[list(self.SHAPES.keys()).index(shape_name)]
+        self.next_shape = self.SHAPES[shape_name]
+        self.next_color = self.colors[list(self.SHAPES.keys()).index(shape_name)]
         
         # Starting position (centered at top)
         self.current_x = self.BOARD_WIDTH // 2 - len(self.current_shape[0]) // 2
         self.current_y = 0
         
-        # Draw the piece
+        # Draw both current and preview pieces
         self.draw_piece()
+        self.draw_preview_piece()
 
     def draw_piece(self):
         # Clear previous piece (if any)
@@ -150,6 +175,35 @@ class TetrisGame:
             outline="black",
             tags=tag
         )
+
+    def draw_preview_piece(self):
+        # Clear the preview canvas
+        self.preview_canvas.delete("all")
+        
+        if not self.next_shape:
+            return
+            
+        # Calculate centering offsets
+        block_size = self.BLOCK_SIZE * 0.8  # Slightly smaller blocks
+        shape_width = len(self.next_shape[0]) * block_size
+        shape_height = len(self.next_shape) * block_size
+        
+        offset_x = (5 * self.BLOCK_SIZE - shape_width) / 2
+        offset_y = (5 * self.BLOCK_SIZE - shape_height) / 2
+        
+        # Draw the preview piece
+        for y, row in enumerate(self.next_shape):
+            for x, cell in enumerate(row):
+                if cell:
+                    x1 = offset_x + x * block_size
+                    y1 = offset_y + y * block_size
+                    x2 = x1 + block_size
+                    y2 = y1 + block_size
+                    self.preview_canvas.create_rectangle(
+                        x1, y1, x2, y2,
+                        fill=self.next_color,
+                        outline="white"
+                    )
 
     def check_collision(self, offset_x=0, offset_y=0, shape=None):
         if shape is None:
@@ -271,8 +325,13 @@ class TetrisGame:
         
         # Reset game state
         self.game_over = False
+        self.next_shape = None
+        self.next_color = None
         
-        # Redraw the board
+        # Clear preview
+        self.preview_canvas.delete("all")
+
+        # redraw board
         self.redraw_board()
         
         # Create new piece

@@ -218,8 +218,32 @@ class TetrisGame:
         self.root.after(1000, self.update_game)
 
     def rotate(self):
-        print("Rotate")
-        # TODO: Implement piece rotation
+        # Get the rotated shape matrix
+        rotated_shape = self.get_rotated_shape()
+        
+        # Check if rotation is possible
+        if not self.check_collision(shape=rotated_shape):
+            self.current_shape = rotated_shape
+            self.draw_piece()
+
+        # If rotation is not possible, try moving the piece to the left
+        elif not self.check_collision(shape=rotated_shape, offset_x=-1):
+            self.current_x -= 1
+            self.current_shape = rotated_shape
+            self.draw_piece()
+
+    def get_rotated_shape(self):
+        # Transpose the shape matrix
+        rows = len(self.current_shape)
+        cols = len(self.current_shape[0])
+        rotated = [[0 for _ in range(rows)] for _ in range(cols)]
+        
+        # Rotate 90 degrees clockwise
+        for row in range(rows):
+            for col in range(cols):
+                rotated[col][rows - 1 - row] = self.current_shape[row][col]
+        
+        return rotated
 
     def run(self):
         self.root.mainloop()

@@ -14,6 +14,7 @@ class TetrisGame:
         self.game_over = False
         self.next_shape = None
         self.next_color = None
+        self.paused = False
         
         # Game constants
         self.BOARD_WIDTH = 10
@@ -91,6 +92,7 @@ class TetrisGame:
         self.root.bind('<Right>', lambda e: self.move_right())
         self.root.bind('<Down>', lambda e: self.move_down())
         self.root.bind('<Up>', lambda e: self.rotate())
+        self.root.bind('<space>', lambda e: self.toggle_pause())
         
         # Start the game loop
         self.update_game()
@@ -223,23 +225,27 @@ class TetrisGame:
         return False
 
     def move_left(self):
-        if not self.check_collision(offset_x=-1):
-            self.current_x -= 1
-            self.draw_piece()
+        if not self.game_over and not self.paused:
+            if not self.check_collision(offset_x=-1):
+                self.current_x -= 1
+                self.draw_piece()
 
     def move_right(self):
-        if not self.check_collision(offset_x=1):
-            self.current_x += 1
-            self.draw_piece()
+        if not self.game_over and not self.paused:
+            if not self.check_collision(offset_x=1):
+                self.current_x += 1
+                self.draw_piece()
 
     def move_down(self):
-        if not self.check_collision(offset_y=1):
-            self.current_y += 1
-            self.draw_piece()
-            return True
-        else:
-            self.place_piece()
-            return False
+        if not self.game_over and not self.paused:
+            if not self.check_collision(offset_y=1):
+                self.current_y += 1
+                self.draw_piece()
+                return True
+            else:
+                self.place_piece()
+                return False
+        return False
 
     def place_piece(self):
         if self.game_over:
@@ -301,7 +307,7 @@ class TetrisGame:
                     self.draw_block(x, y, color, "placed")
 
     def update_game(self):
-        if not self.game_over:
+        if not self.game_over and not self.paused:
             # Move piece down automatically
             self.move_down()
             # Schedule next update (faster fall speed = lower number)
@@ -386,21 +392,52 @@ class TetrisGame:
             tags="gameover"
         )
 
-    def rotate(self):
-        # Get the rotated shape matrix
-        rotated_shape = self.get_rotated_shape()
+    def toggle_pause(self):
+        if self.game_over:
+            return
+            
+        self.paused = not self.paused
+        if self.paused:
+            self.show_pause_screen()
+        else:
+            self.hide_pause_screen()
+            self.update_game()
+
+    def show_pause_screen(self):
+        # Create semi-transparent overlay
+        self.canvas.create_rectangle(
+            0, 0,
+            self.BOARD_WIDTH * self.BLOCK_SIZE,
+            self.BOARD_HEIGHT * self.BLOCK_SIZE,
+            fill='black',
+            stipple='gray50',
+            tags="pause"
+        )
         
-        # Check if rotation is possible
-        if not self.check_collision(shape=rotated_shape):
-            self.current_shape = rotated_shape
-            self.draw_piece()
+        # Show pause text
+        self.canvas.create_text(
+            self.BOARD_WIDTH * self.BLOCK_SIZE // 2,
+            self.BOARD_HEIGHT * self.BLOCK_SIZE // 2,
+            text="PAUSED\n\nPress SPACE to continue",
+            fill="white",
+            font=("Arial", 24, "bold"),
+            justify="center",
+            tags="pause"
+        )
 
-        # If rotation is not possible, try moving the piece to the left
-        elif not self.check_collision(shape=rotated_shape, offset_x=-1):
-            self.current_x -= 1
-            self.current_shape = rotated_shape
-            self.draw_piece()
+    def hide_pause_screen(self):
+        self.canvas.delete("pause")
 
+    def rotate(self):
+        if not self.game_over and not self.paused:
+            # Get the rotated shape matrix
+            rotated_shape = self.get_rotated_shape()
+            
+            # Check if rotation is possible
+            if not self.check_collision(shape=rotated_shape):
+                self.current_shape = rotated_shape
+                self.draw_piece()
+                
     def get_rotated_shape(self):
         # Transpose the shape matrix
         rows = len(self.current_shape)

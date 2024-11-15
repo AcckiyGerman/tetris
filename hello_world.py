@@ -15,6 +15,10 @@ class TetrisGame:
         self.BOARD_HEIGHT = 20
         self.BLOCK_SIZE = 30
         
+        # Score tracking
+        self.score = 0
+        self.lines_cleared = 0
+        
         # Define tetromino shapes
         self.SHAPES = {
             'I': [[1, 1, 1, 1]],
@@ -42,6 +46,10 @@ class TetrisGame:
         # Create main frame
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Create score label
+        self.score_label = ttk.Label(main_frame, text="Score: 0\nLines: 0")
+        self.score_label.grid(row=0, column=1, padx=10, pady=5, sticky="n")
         
         # Create canvas
         canvas_width = self.BOARD_WIDTH * self.BLOCK_SIZE
@@ -189,6 +197,9 @@ class TetrisGame:
                     if board_y >= 0:
                         self.board[board_y][board_x] = self.current_color
         
+        # Check for completed lines
+        self.clear_lines()
+        
         # Redraw the entire board
         self.redraw_board()
         
@@ -198,7 +209,31 @@ class TetrisGame:
         # Check if game is over
         if self.check_collision():
             print("Game Over!")
+            print(f"Final Score: {self.score}")
+            print(f"Lines Cleared: {self.lines_cleared}")
             self.root.quit()
+
+    def clear_lines(self):
+        lines_to_clear = []
+        
+        # Find completed lines
+        for y in range(self.BOARD_HEIGHT):
+            if all(self.board[y]):  # If all cells in the row are filled
+                lines_to_clear.append(y)
+        
+        if not lines_to_clear:
+            return
+        
+        # Update score (more lines = more points)
+        lines_count = len(lines_to_clear)
+        self.lines_cleared += lines_count
+        self.score += {1: 100, 2: 300, 3: 500, 4: 800}.get(lines_count, 0)
+        self.score_label.config(text=f"Score: {self.score}\nLines: {self.lines_cleared}")
+        
+        # Remove completed lines and add new empty lines at the top
+        for line in sorted(lines_to_clear, reverse=True):
+            del self.board[line]
+            self.board.insert(0, [0] * self.BOARD_WIDTH)
 
     def redraw_board(self):
         # Clear the board on canvas

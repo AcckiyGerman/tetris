@@ -15,6 +15,30 @@ class TetrisGame:
         self.BOARD_HEIGHT = 20
         self.BLOCK_SIZE = 30
         
+        # Define tetromino shapes
+        self.SHAPES = {
+            'I': [[1, 1, 1, 1]],
+            'O': [[1, 1],
+                  [1, 1]],
+            'T': [[0, 1, 0],
+                  [1, 1, 1]],
+            'S': [[0, 1, 1],
+                  [1, 1, 0]],
+            'Z': [[1, 1, 0],
+                  [0, 1, 1]],
+            'J': [[1, 0, 0],
+                  [1, 1, 1]],
+            'L': [[0, 0, 1],
+                  [1, 1, 1]]
+        }
+        
+        # Current piece state
+        self.current_piece = None
+        self.current_x = 0
+        self.current_y = 0
+        self.current_shape = None
+        self.current_color = None
+        
         # Create main frame
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -36,6 +60,9 @@ class TetrisGame:
         
         # Draw grid lines
         self.draw_grid()
+        
+        # Create first piece
+        self.create_new_piece()
         
         # Bind keyboard events
         self.root.bind('<Left>', lambda e: self.move_left())
@@ -67,6 +94,48 @@ class TetrisGame:
                 0, y, self.BOARD_WIDTH * self.BLOCK_SIZE, y,
                 fill='gray'
             )
+
+    def create_new_piece(self):
+        # Choose a random shape and color
+        shape_name = random.choice(list(self.SHAPES.keys()))
+        self.current_shape = self.SHAPES[shape_name]
+        self.current_color = self.colors[list(self.SHAPES.keys()).index(shape_name)]
+        
+        # Starting position (centered at top)
+        self.current_x = self.BOARD_WIDTH // 2 - len(self.current_shape[0]) // 2
+        self.current_y = 0
+        
+        # Draw the piece
+        self.draw_piece()
+
+    def draw_piece(self):
+        # Clear previous piece (if any)
+        self.canvas.delete("piece")
+        
+        # Draw current piece
+        for y, row in enumerate(self.current_shape):
+            for x, cell in enumerate(row):
+                if cell:
+                    self.draw_block(
+                        self.current_x + x,
+                        self.current_y + y,
+                        self.current_color,
+                        "piece"
+                    )
+
+    def draw_block(self, x, y, color, tag):
+        x1 = x * self.BLOCK_SIZE
+        y1 = y * self.BLOCK_SIZE
+        x2 = x1 + self.BLOCK_SIZE
+        y2 = y1 + self.BLOCK_SIZE
+        
+        # Draw filled rectangle with black border
+        self.canvas.create_rectangle(
+            x1, y1, x2, y2,
+            fill=color,
+            outline="black",
+            tags=tag
+        )
 
     def move_left(self):
         print("Move left")

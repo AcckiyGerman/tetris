@@ -10,6 +10,9 @@ class TetrisGame:
         # Colors for tetrominos
         self.colors = ['cyan', 'yellow', 'purple', 'blue', 'orange', 'green', 'red']
         
+        # Game state
+        self.game_over = False
+        
         # Game constants
         self.BOARD_WIDTH = 10
         self.BOARD_HEIGHT = 20
@@ -188,6 +191,9 @@ class TetrisGame:
             return False
 
     def place_piece(self):
+        if self.game_over:
+            return
+
         # Add the current piece to the board
         for y, row in enumerate(self.current_shape):
             for x, cell in enumerate(row):
@@ -208,10 +214,8 @@ class TetrisGame:
         
         # Check if game is over
         if self.check_collision():
-            print("Game Over!")
-            print(f"Final Score: {self.score}")
-            print(f"Lines Cleared: {self.lines_cleared}")
-            self.root.quit()
+            self.game_over = True
+            self.show_game_over()
 
     def clear_lines(self):
         lines_to_clear = []
@@ -246,11 +250,85 @@ class TetrisGame:
                     self.draw_block(x, y, color, "placed")
 
     def update_game(self):
-        # Move piece down automatically
-        self.move_down()
+        if not self.game_over:
+            # Move piece down automatically
+            self.move_down()
+            # Schedule next update (faster fall speed = lower number)
+            self.root.after(1000, self.update_game)
+
+    def reset_game(self):
+        # Clear the board
+        self.board = [[0 for _ in range(self.BOARD_WIDTH)] 
+                     for _ in range(self.BOARD_HEIGHT)]
         
-        # Schedule next update (faster fall speed = lower number)
-        self.root.after(1000, self.update_game)
+        # Reset score
+        self.score = 0
+        self.lines_cleared = 0
+        self.score_label.config(text="Score: 0\nLines: 0")
+        
+        # Clear game over screen
+        self.canvas.delete("gameover")
+        
+        # Reset game state
+        self.game_over = False
+        
+        # Redraw the board
+        self.redraw_board()
+        
+        # Create new piece
+        self.create_new_piece()
+        
+        # Restart game loop
+        self.update_game()
+
+    def show_game_over(self):
+        self.game_over = True
+        
+        # Create semi-transparent overlay
+        self.canvas.create_rectangle(
+            0, 0,
+            self.BOARD_WIDTH * self.BLOCK_SIZE,
+            self.BOARD_HEIGHT * self.BLOCK_SIZE,
+            fill='black',
+            stipple='gray50',
+            tags="gameover"
+        )
+        
+        # Show game over text
+        self.canvas.create_text(
+            self.BOARD_WIDTH * self.BLOCK_SIZE // 2,
+            self.BOARD_HEIGHT * self.BLOCK_SIZE // 2 - 50,
+            text="GAME OVER",
+            fill="white",
+            font=("Arial", 36, "bold"),
+            tags="gameover"
+        )
+        
+        # Show final score
+        self.canvas.create_text(
+            self.BOARD_WIDTH * self.BLOCK_SIZE // 2,
+            self.BOARD_HEIGHT * self.BLOCK_SIZE // 2,
+            text=f"Score: {self.score}\nLines: {self.lines_cleared}",
+            fill="white",
+            font=("Arial", 24),
+            tags="gameover"
+        )
+        
+        # Create restart button
+        restart_button = tk.Button(
+            self.canvas,
+            text="Play Again",
+            command=self.reset_game,
+            font=("Arial", 16)
+        )
+        
+        # Place button on canvas
+        self.canvas.create_window(
+            self.BOARD_WIDTH * self.BLOCK_SIZE // 2,
+            self.BOARD_HEIGHT * self.BLOCK_SIZE // 2 + 50,
+            window=restart_button,
+            tags="gameover"
+        )
 
     def rotate(self):
         # Get the rotated shape matrix
